@@ -19,7 +19,7 @@ import os
 
 def create_model():
     
-   hf_token=os.getenv("HF_TOKEN")
+   hf_token="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"
    if not hf_token:
         raise ValueError("the hf token is not available")   
    repo_id="Qwen/Qwen2.5-7B-Instruct"     
