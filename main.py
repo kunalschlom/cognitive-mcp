@@ -9,23 +9,11 @@ import langchain
 import langchain_huggingface 
 from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint, HuggingFaceEmbeddings
 import os 
-
+from model_creator import create_model
 from dotenv import load_dotenv
 load_dotenv()
-def create_model():
-    
-   hf_token=os.getenv("HF_TOKEN")
-   if not hf_token:
-        raise ValueError("the hf token is not available")   
-   repo_id="Qwen/Qwen2.5-7B-Instruct"     
-   llm=HuggingFaceEndpoint(
-       repo_id=repo_id,
-       huggingfacehub_api_token=hf_token,
-       task="conversational"
-   ) 
-   model=ChatHuggingFace(llm=llm)
+model=create_model()
 
-   return model 
 
 
 
@@ -155,7 +143,7 @@ async def cognitive_signal_(date: str):
 
     input_id = data["id"]
 
-    model = create_model()
+   
 
     prompt = f"""
 You are a cognitive analyzer.
@@ -184,7 +172,7 @@ Input metrics:
 {data}
 """
 
-    response = model.invoke(prompt)
+    response = await model.ainvoke(prompt)
     text = response.content
 
     clean = re.sub(r"```json|```", "", text).strip()
