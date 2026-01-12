@@ -84,10 +84,10 @@ def initialise_db():
 async def add_data(
     active_tasks: int,
     urgent_tasks: int,
-    context_swithes: int,
-    focus: int,
-    sleep: float,
-    self_stress: int,
+    context_swithes_last_hour: int,
+    focus_minutes_today: int,
+    sleep_hours_last_night: float,
+    self_reported_stress: int,
     date: str
 ):
     conn = await asyncpg.connect(
@@ -109,10 +109,10 @@ async def add_data(
         """,
         active_tasks,
         urgent_tasks,
-        context_swithes,
-        focus,
-        sleep,
-        self_stress,
+        context_swithes_last_hour,
+        focus_minutes_today,
+        sleep_hours_last_night,
+        self_reported_stress,
         date
     )
 
