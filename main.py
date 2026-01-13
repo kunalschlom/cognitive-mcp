@@ -18,7 +18,7 @@ def create_model():
    import langchain_huggingface 
    from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint
     
-   hf_token="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"
+   hf_token="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"
    if not hf_token:
         raise ValueError("the hf token is not available")   
    repo_id="Qwen/Qwen2.5-7B-Instruct"     
