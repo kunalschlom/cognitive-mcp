@@ -1,23 +1,22 @@
 from fastmcp import FastMCP
-import psycopg2
-import asyncpg
-from datetime import datetime
-import json
-import re
-import langchain
 
-import langchain_huggingface 
-from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint, HuggingFaceEmbeddings
-import os 
+DATABASE_URL ="postgresql://neondb_owner:npg_RPjCGwAZ2Wz5@ep-frosty-frog-a1ectlpt-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+mcp = FastMCP(name="CognitiveMCP")
 
-import langchain
-import langgraph
-import langchain_core
-import langchain_huggingface 
-from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint, HuggingFaceEmbeddings
-import os 
+
+
+async def get_conn():
+    import asyncpg
+    return await asyncpg.connect(
+        DATABASE_URL,
+        ssl="require",
+    )
+
+
 
 def create_model():
+   import langchain_huggingface 
+   from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint
     
    hf_token="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"
    if not hf_token:
@@ -31,57 +30,7 @@ def create_model():
    model=ChatHuggingFace(llm=llm)
 
    return model 
-model=create_model()
 
-
-
-
-mcp = FastMCP(name="Cognitive MCP")
-
-# --------------------------
-# Database Initialization
-# --------------------------
-def initialise_db():
-    conn = psycopg2.connect(
-        host="localhost",
-        port=5432,
-        user="postgres",
-        password="kunal",
-        database="user_info"
-    )
-    cur = conn.cursor()
-
-    cur.execute("""
-    CREATE SCHEMA IF NOT EXISTS cognitive;
-    """)
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS cognitive.cognitive_inputs (
-        id SERIAL PRIMARY KEY,
-        active_tasks INTEGER NOT NULL,
-        urgent_tasks INTEGER NOT NULL,
-        context_switches_last_hour INTEGER NOT NULL,
-        focus_minutes_today INTEGER NOT NULL,
-        sleep_hours_last_night NUMERIC(3,1) NOT NULL,
-        self_reported_stress INTEGER NOT NULL CHECK (self_reported_stress BETWEEN 1 AND 10),
-        date DATE DEFAULT current_date
-    );
-    """)
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS cognitive.cognitive_assessments (
-        id SERIAL PRIMARY KEY,
-        input_id INTEGER NOT NULL REFERENCES cognitive.cognitive_inputs(id) ON DELETE CASCADE,
-        state VARCHAR(50) NOT NULL,
-        action VARCHAR(50) NOT NULL,
-        confidence NUMERIC(3,2) CHECK (confidence BETWEEN 0 AND 1),
-        date DATE DEFAULT current_date
-    );
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
 
 
 # --------------------------
@@ -97,13 +46,8 @@ async def add_data(
     self_reported_stress: int,
     date: str
 ):
-    conn = await asyncpg.connect(
-        host="localhost",
-        port=5432,
-        user="postgres",
-        password="kunal",
-        database="user_info"
-    )
+    from datetime import datetime
+    conn = await get_conn()
     date=datetime.strptime(date,"%Y-%m-%d").date()
 
     await conn.execute(
@@ -132,15 +76,12 @@ async def add_data(
 # --------------------------
 @mcp.tool
 async def cognitive_signal_(date: str):
+    from datetime import datetime
+    import re 
+    import json
     date_obj = datetime.strptime(date, "%Y-%m-%d").date()
-
-    conn = await asyncpg.connect(
-        host="localhost",
-        port=5432,
-        user="postgres",
-        password="kunal",
-        database="user_info"
-    )
+    model=create_model()
+    conn = await get_conn()
 
     row = await conn.fetchrow(
         """
@@ -219,7 +160,7 @@ Input metrics:
 
 
 if __name__=="__main__":
-    initialise_db()
+    
 
-    mcp.run(transport='http',port=8001,host='0.0.0.0')
+    mcp.run(transport='http',port=8001,host='127.0.0.1')
     
