@@ -16,6 +16,33 @@ async def get_conn():
         
     )
 
+def safe_parse_json(text: str) -> dict | None:
+    import json
+    import re
+
+    # Remove markdown if model ignored instructions
+    text = re.sub(r"```(?:json)?|```", "", text).strip()
+
+    # Try direct parse
+    try:
+        obj = json.loads(text)
+        if isinstance(obj, dict):
+            return obj
+    except json.JSONDecodeError:
+        pass
+
+    # Fallback: extract first JSON object
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        try:
+            obj = json.loads(match.group())
+            if isinstance(obj, dict):
+                return obj
+        except json.JSONDecodeError:
+            pass
+
+    return None
+
 
 
 def create_model():
@@ -29,7 +56,7 @@ def create_model():
    hf_token=os.getenv("HF_TOKEN")
    if not hf_token:
         raise ValueError("the hf token is not available")   
-   repo_id="Qwen/Qwen2.5-7B-Instruct"     
+   repo_id="mistralai/Mistral-7B-Instruct-v0.2"     
    llm=HuggingFaceEndpoint(
        repo_id=repo_id,
        huggingfacehub_api_token=hf_token,
@@ -116,35 +143,31 @@ async def cognitive_signal_(date: str):
     prompt = f"""
 You are a cognitive analyzer.
 
-Return ONLY valid JSON with keys:
-- state
-- action
-- confidence
+Your task is to return a SINGLE JSON object and NOTHING ELSE.
 
-Allowed states:
-- overloaded
-- normal
-- underutilized
-- fatigued
+STRICT RULES:
+- Output MUST be valid JSON
+- Do NOT include explanations, comments, or markdown
+- Do NOT wrap the output in ```json
+- Do NOT add extra keys
 
-Allowed actions:
-- reduce_task_load
-- maintain
-- increase_focus
-- rest
-
-Confidence:
-- number between 0 and 1
+Required JSON schema:
+{{
+  "state": "overloaded | normal | underutilized | fatigued",
+  "action": "reduce_task_load | maintain | increase_focus | rest",
+  "confidence": number between 0 and 1
+}}
 
 Input metrics:
 {data}
 """
 
+
     response = await model.ainvoke(prompt)
     text = response.content
 
-    clean = re.sub(r"```json|```", "", text).strip()
-    output = json.loads(clean)
+    output = safe_parse_json(text)
+    
 
     await conn.execute(
         """
