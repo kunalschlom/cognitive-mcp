@@ -6,10 +6,12 @@ mcp = FastMCP(name="CognitiveMCP")
 
 async def get_conn():
     import asyncpg 
+    from dotenv import load_dotenv
+    load_dotenv()
     import os
     return await asyncpg.connect(
         os.getenv("DATABASE_URL"),
-        ssl="require",
+        
     )
 
 
