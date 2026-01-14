@@ -4,7 +4,6 @@ DATABASE_URL ="postgresql://neondb_owner:npg_RPjCGwAZ2Wz5@ep-frosty-frog-a1ectlp
 mcp = FastMCP(name="CognitiveMCP")
 
 
-
 async def get_conn():
     import asyncpg
     return await asyncpg.connect(
@@ -15,10 +14,14 @@ async def get_conn():
 
 
 def create_model():
+   import os 
+   from dotenv import load_dotenv
+   load_dotenv()
+
    import langchain_huggingface 
    from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint
     
-   hf_token="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"
+   hf_token=os.getenv("HF_TOKEN")
    if not hf_token:
         raise ValueError("the hf token is not available")   
    repo_id="Qwen/Qwen2.5-7B-Instruct"     
