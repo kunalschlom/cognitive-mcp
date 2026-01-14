@@ -2,15 +2,17 @@ from fastmcp import FastMCP
 
 
 mcp = FastMCP(name="CognitiveMCP")
-
-
+ 
+DATABASE_URL="postgresql://neondb_owner:npg_RPjCGwAZ2Wz5@ep-frosty-frog-a1ectlpt-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 async def get_conn():
     import asyncpg 
     from dotenv import load_dotenv
     load_dotenv()
     import os
     return await asyncpg.connect(
-        os.getenv("DATABASE_URL"),
+        DATABASE_URL,
+        ssl="require",
+       
         
     )
 
